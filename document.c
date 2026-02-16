@@ -689,7 +689,7 @@ is_metadata_block_mmd(const char *data, size_t sz, int *is_yaml)
 
 	/*
 	 * Scan the line for link patterns.
-	 * Reject if we see '](' (inline link) or '://' (URL scheme).
+	 * Reject if we see '](' (inline link).
 	 */
 	for (size_t j = i ; j < sz; j++) {
 		if (data[j] == '\n')
