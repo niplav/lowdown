@@ -664,9 +664,9 @@ is_metadata_block_pandoc(const char *data, size_t sz)
 /*
  * Test if the buffer "data" of size "sz" might be a MMD metadata block.
  * This only sees if the first line starts with an alnum and contains a
- * colon, and that the block ends in two newlines.  Alternatively, the
- * first line is "---" and last is "---" or "....", which is the YAML
- * syntax ("is_yaml" will be set).
+ * colon and isn't a link, *and* that the block ends in two newlines.
+ * Alternatively, the first line is "---" and last is "---" or "....",
+ * which is the YAML syntax ("is_yaml" will be set).
  * Returns zero if not a metadata block, otherwise the block length if
  * it may be.
  */
@@ -687,9 +687,21 @@ is_metadata_block_mmd(const char *data, size_t sz, int *is_yaml)
 	if (!isalnum((unsigned char)data[i]))
 		return 0;
 
-	for ( ; i < sz; i++)
+	/*
+	 * Scan the line for link patterns.
+	 * Reject if we see '](' (inline link) or '://' (URL scheme).
+	 */
+	for (size_t j = i ; j < sz; j++) {
+		if (data[j] == '\n')
+			break;
+		if (j > 0 && data[j - 1] == ']' && data[j] == '(')
+			return 0;
+	}
+
+	for ( ; i < sz; i++) {
 		if (data[i] == '\n' || data[i] == ':')
 			break;
+	}
 
 	if (i == sz || data[i] != ':')
 		return 0;
@@ -2167,7 +2179,7 @@ char_supsubscript(struct lowdown_doc *doc, char *data, size_t offset,
 
 		/*
 		 * FIXME: a standalone "~~" results in noting at all
-		 * being printed instead of the ~~.  
+		 * being printed instead of the ~~.
 		 */
 		if (sup_len == size)
 			return 0;
